@@ -5,7 +5,7 @@ import {
   FileText, Image, Lock, ArrowLeft, Plus, Copy,
   Trash2, AlertCircle, Search,
 } from "lucide-react";
-import { FaInstagram, FaLinkedin } from "react-icons/fa";
+import { FaInstagram, FaLink, FaLinkedin } from "react-icons/fa";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -61,21 +61,135 @@ async function dbSet(key, value) {
 const DEFAULT_DATA = { name:"", title:"", company:"", bio:"", phone:"", email:"", website:"", instagram:"", linkedin:"", photo:"" };
 const DEFAULT_VIS  = { photo:true, bio:true, phone:true, email:true, website:true, instagram:true, linkedin:true };
 
-function downloadVCard(data, vis) {
+// function downloadVCard(data, vis) {
+//   const lines = [
+//     "BEGIN:VCARD","VERSION:3.0",`FN:${data.name}`,
+//     data.title?`TITLE:${data.title}`:"", data.company?`ORG:${data.company}`:"",
+//     vis.phone&&data.phone?`TEL;TYPE=CELL:${data.phone}`:"",
+//     vis.email&&data.email?`EMAIL:${data.email}`:"",
+//     vis.website&&data.website?`URL:https://${data.website}`:"",
+//     vis.instagram&&data.instagram?`X-SOCIALPROFILE;type=instagram:https://instagram.com/${data.instagram}`:"",
+//     vis.linkedin&&data.linkedin?`X-SOCIALPROFILE;type=linkedin:https://linkedin.com/${data.linkedin}`:"",
+//     "END:VCARD",
+//   ].filter(Boolean).join("\r\n");
+//   const blob = new Blob([lines],{type:"text/vcard;charset=utf-8"});
+//   const url = URL.createObjectURL(blob);
+//   const a = Object.assign(document.createElement("a"),{href:url,download:`${(data.name||"contact").replace(/\s+/g,"_")}.vcf`});
+//   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+// }
+
+// function downloadVCard(data, vis) {
+//   const escape = (str) =>
+//     (str || "").replace(/([,;])/g, "\\$1");
+
+//   const lines = [
+//     "BEGIN:VCARD",
+//     "VERSION:3.0",
+//     `FN:${escape(data.name)}`,
+
+//     data.title ? `TITLE:${escape(data.title)}` : null,
+//     data.company ? `ORG:${escape(data.company)}` : null,
+
+//     vis.phone && data.phone ? `TEL;TYPE=CELL:${data.phone}` : null,
+//     vis.email && data.email ? `EMAIL:${data.email}` : null,
+
+//     vis.website && data.website
+//       ? `URL:${data.website.startsWith("http") ? data.website : "https://" + data.website}`
+//       : null,
+
+//     vis.instagram && data.instagram
+//       ? `X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/${data.instagram}`
+//       : null,
+
+//     vis.linkedin && data.linkedin
+//       ? `X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/${data.linkedin}`
+//       : null,
+
+//     "END:VCARD",
+//   ]
+//     .filter(Boolean)
+//     .join("\r\n");
+
+//   const blob = new Blob([lines], { type: "text/vcard" });
+
+//   const url = URL.createObjectURL(blob);
+
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = `${(data.name || "contact").replace(/\s+/g, "_")}.vcf`;
+
+//   document.body.appendChild(a);
+//   a.click();
+//   document.body.removeChild(a);
+
+//   URL.revokeObjectURL(url);
+// }
+
+function buildVCard(data, vis) {
+  const escape = (str) =>
+    (str || "").replace(/([,;])/g, "\\$1");
+
   const lines = [
-    "BEGIN:VCARD","VERSION:3.0",`FN:${data.name}`,
-    data.title?`TITLE:${data.title}`:"", data.company?`ORG:${data.company}`:"",
-    vis.phone&&data.phone?`TEL;TYPE=CELL:${data.phone}`:"",
-    vis.email&&data.email?`EMAIL:${data.email}`:"",
-    vis.website&&data.website?`URL:https://${data.website}`:"",
-    vis.instagram&&data.instagram?`X-SOCIALPROFILE;type=instagram:https://instagram.com/${data.instagram}`:"",
-    vis.linkedin&&data.linkedin?`X-SOCIALPROFILE;type=linkedin:https://linkedin.com/${data.linkedin}`:"",
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${escape(data.name || "")}`,
+
+    data.title ? `TITLE:${escape(data.title)}` : null,
+    data.company ? `ORG:${escape(data.company)}` : null,
+
+    vis.phone && data.phone ? `TEL;TYPE=CELL:${data.phone}` : null,
+    vis.email && data.email ? `EMAIL:${data.email}` : null,
+
+    vis.website && data.website
+      ? `URL:${data.website.startsWith("http") ? data.website : "https://" + data.website}`
+      : null,
+
+    vis.instagram && data.instagram
+      ? `X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/${data.instagram}`
+      : null,
+
+    vis.linkedin && data.linkedin
+      ? `X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/${data.linkedin}`
+      : null,
+
     "END:VCARD",
-  ].filter(Boolean).join("\r\n");
-  const blob = new Blob([lines],{type:"text/vcard;charset=utf-8"});
+  ];
+
+  return lines.filter(Boolean).join("\r\n");
+}
+
+async function downloadVCard(data, vis) {
+  const vcard = buildVCard(data, vis);
+  const filename = `${(data.name || "contact").replace(/\s+/g, "_")}.vcf`;
+
+  const blob = new Blob([vcard], { type: "text/vcard" });
+
+  const file = new File([blob], filename, { type: "text/vcard" });
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Contact Card",
+        text: "Save this contact",
+        files: [file],
+      });
+      return;
+    }
+  } catch (err) {
+    console.log("Share failed, falling back to download:", err);
+  }
+
+  // fallback download
   const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement("a"),{href:url,download:`${(data.name||"contact").replace(/\s+/g,"_")}.vcf`});
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
 }
 
 function Toggle({ checked, onChange }) {
@@ -223,7 +337,7 @@ function CardView({ data, vis, username, onAdmin }) {
           <div style={{padding:"0 2rem 2rem"}}>
             <button className="add-btn" onClick={()=>downloadVCard(data,vis)} style={{width:"100%",padding:"15px 0",borderRadius:16,background:`linear-gradient(135deg,#D4A840 0%,${GOLD} 50%,#A8822A 100%)`,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#0F0B00",fontWeight:700,fontSize:14,letterSpacing:.8,fontFamily:"sans-serif",transition:"all .25s ease",boxShadow:"0 6px 24px rgba(201,168,76,.3)",position:"relative",overflow:"hidden"}}>
               <Download size={16}/>
-              Save Contact
+              Save Tooo Contact
             </button>
           </div>
 
@@ -362,8 +476,8 @@ function AdminView({ username, data, setData, vis, setVis, onSave, saved, onBack
 
         <SL>Social</SL>
         <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:"2rem"}}>
-          <FieldRow label="Instagram" icon={Instagram} fieldKey="instagram" data={data} setData={setData} vis={vis} setVis={setVis} placeholder="username" prefix="@"/>
-          <FieldRow label="LinkedIn" icon={Linkedin} fieldKey="linkedin" data={data} setData={setData} vis={vis} setVis={setVis} placeholder="in/yourprofile" prefix="linkedin.com/"/>
+          <FieldRow label="Instagram" icon={FaInstagram} fieldKey="instagram" data={data} setData={setData} vis={vis} setVis={setVis} placeholder="username" prefix="@"/>
+          <FieldRow label="LinkedIn" icon={FaLinkedin} fieldKey="linkedin" data={data} setData={setData} vis={vis} setVis={setVis} placeholder="in/yourprofile" prefix="linkedin.com/"/>
         </div>
 
         <button className="save-btn" onClick={onSave} style={{width:"100%",padding:"15px 0",borderRadius:16,background:saved?"#3A9A62":"#7C6DB5",border:"none",cursor:"pointer",color:"#fff",fontWeight:700,fontSize:15,letterSpacing:.5,display:"flex",alignItems:"center",justifyContent:"center",gap:10,fontFamily:"sans-serif",transition:"all .25s",boxShadow:"0 6px 24px rgba(124,109,181,.35)",marginBottom:"3rem"}}>
