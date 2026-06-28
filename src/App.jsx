@@ -78,118 +78,18 @@ const DEFAULT_VIS  = { photo:true, bio:true, phone:true, email:true, website:tru
 //   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 // }
 
-// function downloadVCard(data, vis) {
-//   const escape = (str) =>
-//     (str || "").replace(/([,;])/g, "\\$1");
-
-//   const lines = [
-//     "BEGIN:VCARD",
-//     "VERSION:3.0",
-//     `FN:${escape(data.name)}`,
-
-//     data.title ? `TITLE:${escape(data.title)}` : null,
-//     data.company ? `ORG:${escape(data.company)}` : null,
-
-//     vis.phone && data.phone ? `TEL;TYPE=CELL:${data.phone}` : null,
-//     vis.email && data.email ? `EMAIL:${data.email}` : null,
-
-//     vis.website && data.website
-//       ? `URL:${data.website.startsWith("http") ? data.website : "https://" + data.website}`
-//       : null,
-
-//     vis.instagram && data.instagram
-//       ? `X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/${data.instagram}`
-//       : null,
-
-//     vis.linkedin && data.linkedin
-//       ? `X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/${data.linkedin}`
-//       : null,
-
-//     "END:VCARD",
-//   ]
-//     .filter(Boolean)
-//     .join("\r\n");
-
-//   const blob = new Blob([lines], { type: "text/vcard" });
-
-//   const url = URL.createObjectURL(blob);
-
-//   const a = document.createElement("a");
-//   a.href = url;
-//   a.download = `${(data.name || "contact").replace(/\s+/g, "_")}.vcf`;
-
-//   document.body.appendChild(a);
-//   a.click();
-//   document.body.removeChild(a);
-
-//   URL.revokeObjectURL(url);
-// }
-
-function buildVCard(data, vis) {
-  const escape = (str) =>
-    (str || "").replace(/([,;])/g, "\\$1");
-
+function buildVCardDataUri(data, vis) {
   const lines = [
-    "BEGIN:VCARD",
-    "VERSION:3.0",
-    `FN:${escape(data.name || "")}`,
-
-    data.title ? `TITLE:${escape(data.title)}` : null,
-    data.company ? `ORG:${escape(data.company)}` : null,
-
-    vis.phone && data.phone ? `TEL;TYPE=CELL:${data.phone}` : null,
-    vis.email && data.email ? `EMAIL:${data.email}` : null,
-
-    vis.website && data.website
-      ? `URL:${data.website.startsWith("http") ? data.website : "https://" + data.website}`
-      : null,
-
-    vis.instagram && data.instagram
-      ? `X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/${data.instagram}`
-      : null,
-
-    vis.linkedin && data.linkedin
-      ? `X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/${data.linkedin}`
-      : null,
-
+    "BEGIN:VCARD","VERSION:3.0",`FN:${data.name}`,
+    data.title?`TITLE:${data.title}`:"", data.company?`ORG:${data.company}`:"",
+    vis.phone&&data.phone?`TEL;TYPE=CELL:${data.phone}`:"",
+    vis.email&&data.email?`EMAIL:${data.email}`:"",
+    vis.website&&data.website?`URL:https://${data.website}`:"",
+    vis.instagram&&data.instagram?`X-SOCIALPROFILE;type=instagram:https://instagram.com/${data.instagram}`:"",
+    vis.linkedin&&data.linkedin?`X-SOCIALPROFILE;type=linkedin:https://linkedin.com/${data.linkedin}`:"",
     "END:VCARD",
-  ];
-
-  return lines.filter(Boolean).join("\r\n");
-}
-
-async function downloadVCard(data, vis) {
-  const vcard = buildVCard(data, vis);
-  const filename = `${(data.name || "contact").replace(/\s+/g, "_")}.vcf`;
-
-  const blob = new Blob([vcard], { type: "text/vcard" });
-
-  const file = new File([blob], filename, { type: "text/vcard" });
-
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: "Contact Card",
-        text: "Save this contact",
-        files: [file],
-      });
-      return;
-    }
-  } catch (err) {
-    console.log("Share failed, falling back to download:", err);
-  }
-
-  // fallback download
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  URL.revokeObjectURL(url);
+  ].filter(Boolean).join("\r\n");
+  return `data:text/vcard;charset=utf-8,${encodeURIComponent(lines)}`;
 }
 
 function Toggle({ checked, onChange }) {
@@ -335,10 +235,10 @@ function CardView({ data, vis, username, onAdmin }) {
 
           {/* Add to contacts */}
           <div style={{padding:"0 2rem 2rem"}}>
-            <button className="add-btn" onClick={()=>downloadVCard(data,vis)} style={{width:"100%",padding:"15px 0",borderRadius:16,background:`linear-gradient(135deg,#D4A840 0%,${GOLD} 50%,#A8822A 100%)`,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#0F0B00",fontWeight:700,fontSize:14,letterSpacing:.8,fontFamily:"sans-serif",transition:"all .25s ease",boxShadow:"0 6px 24px rgba(201,168,76,.3)",position:"relative",overflow:"hidden"}}>
+            <a href={buildVCardDataUri(data,vis)} className="add-btn" style={{width:"100%",padding:"15px 0",borderRadius:16,background:`linear-gradient(135deg,#D4A840 0%,${GOLD} 50%,#A8822A 100%)`,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#0F0B00",fontWeight:700,fontSize:14,letterSpacing:.8,fontFamily:"sans-serif",transition:"all .25s ease",boxShadow:"0 6px 24px rgba(201,168,76,.3)",position:"relative",overflow:"hidden", textDecoration:"none"}}>
               <Download size={16}/>
-              Save Tooo Contact
-            </button>
+              Save Contact
+            </a>
           </div>
 
           {/* Bottom shimmer */}
