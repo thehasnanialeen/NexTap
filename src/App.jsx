@@ -235,7 +235,7 @@ function CardView({ data, vis, username, onAdmin }) {
 
           {/* Add to contacts */}
           <div style={{padding:"0 2rem 2rem"}}>
-            <a href={buildVCardDataUri(data,vis)} className="add-btn" style={{width:"100%",padding:"15px 0",borderRadius:16,background:`linear-gradient(135deg,#D4A840 0%,${GOLD} 50%,#A8822A 100%)`,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#0F0B00",fontWeight:700,fontSize:14,letterSpacing:.8,fontFamily:"sans-serif",transition:"all .25s ease",boxShadow:"0 6px 24px rgba(201,168,76,.3)",position:"relative",overflow:"hidden", textDecoration:"none"}}>
+            <a href="/contact.vcf" className="add-btn" style={{width:"100%",padding:"15px 0",borderRadius:16,background:`linear-gradient(135deg,#D4A840 0%,${GOLD} 50%,#A8822A 100%)`,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#0F0B00",fontWeight:700,fontSize:14,letterSpacing:.8,fontFamily:"sans-serif",transition:"all .25s ease",boxShadow:"0 6px 24px rgba(201,168,76,.3)",position:"relative",overflow:"hidden", textDecoration:"none"}}>
               <Download size={16}/>
               Save Contact
             </a>
